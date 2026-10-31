@@ -66,7 +66,7 @@ def title_case(t):
 
 def tag_of(title, ex=''):
     s = (title + ' ' + ex).lower()
-    if re.search(r'tribut|icms|pis\b|cofins|itcmd|imposto|fiscal|lucro presumido|ipi\b|\biss\b|reforma tribut|dctf|ecf|sped', s):
+    if re.search(r'tribut|icms|pis\b|cofins|itcmd|imposto|fiscais\b|\bfiscal\b|lucro presumido|ipi\b|\biss\b|reforma tribut|dctf|ecf|sped', s):
         return 'Tributário'
     if re.search(r'sindic|convenç|negocia[çc]|dissídio|acordo coletivo', s):
         return 'Sindical'
@@ -180,6 +180,11 @@ for kind in ('artigos', 'eventos'):
         posts.append(dict(kind=kind, slug=s, title=ttl, ex=ex, thumb=thumb(d) if kind == 'eventos' else None, tag=tag_of(ttl, ex), d=d, pos=i, fecha=DATAS.get(s, {}).get('date'), modif=DATAS.get(s, {}).get('modified')))
 ART = [x for x in posts if x['kind'] == 'artigos']
 EV = [x for x in posts if x['kind'] == 'eventos']
+for _lst in (ART, EV):
+    _cnt = {}
+    for _x in _lst:
+        _cnt[_x['tag']] = _cnt.get(_x['tag'], 0) + 1
+        _x['cov'] = (_cnt[_x['tag']] - 1) % 4 + 1      # capas do mesmo tema se alternam, sem repetir em sequência
 
 
 def cut(t, n):
@@ -189,10 +194,17 @@ def cut(t, n):
 
 def card(x, p):
     href = f'{p}{x["kind"]}/{x["slug"]}.html'
-    cls = {'Trabalhista': 'trab', 'Sindical': 'sind', 'Cível e contratos': 'civ', 'Tributário': 'trib', 'Geral': 'ger'}[x['tag']]
-    img = f'<img src="{p}{x["thumb"]}" alt="" loading="lazy">' if x['thumb'] else f'<div class="ph {cls}"><img src="{p}img/simbolo-pt.svg" alt=""><span>{x["tag"] if x["kind"] == "artigos" else "Evento"}</span></div>'
-    badge = '<span class="badge pjr">Tributário · PJR</span>' if x['tag'] == 'Tributário' else f'<span class="badge">{x["tag"]}</span>'
-    return f'<a class="post" href="{href}" data-t="{esc((x["title"] + " " + x["ex"]).lower())}" data-tag="{x["tag"]}"><div class="pimg">{img}</div><div class="pbody">{badge}<h3>{esc(x["title"])}</h3><p>{esc(cut(x["ex"], 140))}</p></div></a>'
+    cov = {'Trabalhista': 'trabalhista', 'Sindical': 'sindical', 'Cível e contratos': 'civil', 'Tributário': 'tributario', 'Geral': 'geral'}[x['tag']]
+    cic = {'Trabalhista': 'id', 'Sindical': 'users', 'Cível e contratos': 'document', 'Tributário': 'chart', 'Geral': 'book'}[x['tag']]
+    n = x['cov']
+    src = x['thumb'] or f'img/cover-{cov}-{n}.webp'
+    if x['kind'] == 'eventos':
+        label, cic = 'Evento', 'users'
+    else:
+        label = 'Tributário · PJR' if x['tag'] == 'Tributário' else x['tag']
+    img = f'<img src="{p}{src}" alt="" loading="lazy"><span class="cbadge">{icon(cic)}</span><span class="clabel">{label}</span>'
+    return (f'<a class="post" href="{href}" data-t="{esc((x["title"] + " " + x["ex"]).lower())}" data-tag="{x["tag"]}">'
+            f'<div class="pimg {"trib" if x["tag"] == "Tributário" else ""}">{img}</div><div class="pbody"><h3>{esc(x["title"])}</h3><p>{esc(cut(x["ex"], 140))}</p></div></a>')
 
 
 SELO = '<img class="selo" src="%simg/selo-pjr-positivo.svg" alt="PJR Consultoria Tributária, uma empresa do grupo Paulo Teodoro Advogados Associados">'

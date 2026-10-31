@@ -21,7 +21,7 @@ Tudo foi extraído do site atual para `dados/conteudo_site_atual.json` e reorgan
 | Nosso escritório, história, diferenciais, compliance, trabalhe conosco | 5 | `escritorio.html`, `historia.html`, `diferenciais.html`, `compliance.html`, `trabalhe-conosco.html` |
 | Imagens | 113 | `img/` (otimizadas, 6,7 MB no total) |
 
-**Artigos e eventos tributários:** 22 artigos e 10 eventos têm tema tributário (classificação automática por palavras-chave; vale revisar). Aparecem com a etiqueta **"Tributário · PJR"**, e a página de cada artigo mostra um aviso com o selo e link para o PJR. A lista está também em `tributario.html`.
+**Artigos e eventos tributários:** 22 artigos e 12 eventos têm tema tributário (classificação automática por palavras-chave; vale revisar). Aparecem com a etiqueta **"Tributário · PJR"**, e a página de cada artigo mostra um aviso com o selo e link para o PJR. A lista está também em `tributario.html`.
 
 ## 3. Mapa do site novo
 
