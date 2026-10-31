@@ -3,11 +3,14 @@ Uso: python3 build_site.py   (lê dados/*.json e img/, escreve as páginas em ./
 """
 import json, os, re, html, shutil
 from icons import icon
+import seo
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ROOT)
 C = json.load(open('dados/conteudo_site_atual.json', encoding='utf-8'))
 ORD = json.load(open('dados/ordem_listas.json', encoding='utf-8'))
+DATAS = json.load(open('dados/datas.json', encoding='utf-8'))
+AUT = json.load(open('dados/autores.json', encoding='utf-8'))   # {slug do artigo: slug do advogado}
 WA = 'https://api.whatsapp.com/send?phone=5531992172016'
 PJR_URL = 'https://samubhz.github.io/pjr-consultoria-tributaria/'
 UP = 'https://pauloteodoro.adv.br/wp-content/uploads/'
@@ -91,13 +94,15 @@ PJR_LAW = {'reinaldo-lage': 'Sócio do PJR', 'aleksandra-alves': 'Tributário ·
 CSS = open('css/style.css', encoding='utf-8').read() if os.path.exists('css/style.css') else ''
 
 
-def layout(path, title, desc, body, depth=0, active='', og=None):
+def layout(path, title, desc, body, depth=0, active='', og=None, meta=None):
     p = '../' * depth
+    title, desc, headx = seo.head(path, title, desc, meta)
     nav = [('escritorio', 'Escritório', 'escritorio.html'), ('areas', 'Áreas', 'areas.html'), ('setores', 'Setores', 'setores.html'),
            ('advogados', 'Advogados', 'advogados.html'), ('conteudos', 'Conteúdos', 'artigos.html'), ('contato', 'Contato', 'contato.html')]
     nav_html = ''.join(f'<li><a href="{p}{h}"{" aria-current=page" if k == active else ""}>{n}</a></li>' for k, n, h in nav)
     out = f'''<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{esc(title)}</title><meta name="description" content="{esc(desc)}"><meta name="theme-color" content="#1C1409"><meta name="robots" content="noindex,nofollow">
+<title>{esc(title)}</title><meta name="description" content="{esc(desc)}"><meta name="theme-color" content="#1C1409">
+{headx}
 <link rel="icon" href="{p}img/avatar-pt.svg" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="{p}css/style.css"></head><body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
 <div class="topbar"><div class="wrap"><span>Belo Horizonte · atuação nacional</span><span><a href="{WA}">WhatsApp (31) 99217-2016</a> <i>·</i> <a href="https://www.linkedin.com/company/paulo-teodoro-advogados-associados/">LinkedIn</a> <i>·</i> <a href="{p}tributario.html">PJR Consultoria Tributária</a></span></div></div>
@@ -172,7 +177,7 @@ for kind in ('artigos', 'eventos'):
             continue
         ttl = title_case(d['title'] or s.replace('-', ' ').capitalize())
         ex = excerpt(d)
-        posts.append(dict(kind=kind, slug=s, title=ttl, ex=ex, thumb=thumb(d) if kind == 'eventos' else None, tag=tag_of(ttl, ex), d=d, pos=i))
+        posts.append(dict(kind=kind, slug=s, title=ttl, ex=ex, thumb=thumb(d) if kind == 'eventos' else None, tag=tag_of(ttl, ex), d=d, pos=i, fecha=DATAS.get(s, {}).get('date'), modif=DATAS.get(s, {}).get('modified')))
 ART = [x for x in posts if x['kind'] == 'artigos']
 EV = [x for x in posts if x['kind'] == 'eventos']
 
@@ -424,7 +429,8 @@ for s, n in LAW:
     bio_html = ''.join(b['h'] if b['h'].startswith('<') else f'<p>{b["h"]}</p>' for b in d['blocks'] if b['t'] == 'html')
     note = f'<p class="note">{PJR_LAW[s]}: atua na PJR Consultoria Tributária, empresa do grupo. <a href="../tributario.html">Saiba mais</a></p>' if s in PJR_LAW else ''
     page = banner('../', 'Advogados', n, None, esc(' · '.join(roles))) + f'<section><div class="wrap lawpage"><img class="lphoto" src="../{local_img(ph[0]["src"])}" alt="{n}"><div class="prose">{bio_html}{note}' + (f'<p><a class="btn solid" href="mailto:{email}">Enviar e-mail</a></p>' if email else '') + '<p><a class="more" href="../advogados.html">← Todos os advogados</a></p></div></div></section>'
-    layout(f'advogados/{s}.html', f'{n} · Paulo Teodoro Advogados Associados', f'{n}, {" · ".join(roles)}.', page, 1, 'advogados')
+    layout(f'advogados/{s}.html', f'{n} · {" · ".join(roles)}', f'{n}, {" e ".join(roles).lower()} do Paulo Teodoro Advogados Associados, em Belo Horizonte. Currículo, áreas de atuação e e-mail para contato.', page, 1, 'advogados',
+           meta=dict(tipo='person', nome=n, cargo=' · '.join(roles), foto=local_img(ph[0]['src']), email=email, crumbs=[('Advogados', 'advogados.html'), (n, f'advogados/{s}.html')]))
 adv += '</div></div></section>'
 layout('advogados.html', 'Advogados · Paulo Teodoro Advogados Associados', 'Sócios e advogados associados do escritório.', adv, 0, 'advogados')
 
@@ -452,18 +458,45 @@ for k, lst, label, hero in (('artigos', ART, 'Artigo', 'img/2024_04_hero-artigos
             elif b['t'] == 'h':
                 if b['h'].strip() and b['h'].strip() not in ('Nosso Escritório', 'Setores Econômicos'):
                     body += f'<h2>{esc(b["h"].strip())}</h2>'
-            elif b['t'] == 'list' and b['items'] != SECTOR_LIST:
+            elif b['t'] == 'list' and b['items'] != SECTOR_LIST and not set(b['items']) <= {'Eventos', 'Artigos', 'Saiba mais sobre o escritório ▸', 'Enviar e-mail'}:
                 body += '<ul class="check">' + ''.join(f'<li>{esc(t)}</li>' for t in b['items']) + '</ul>'
         pj = ''
         if x['tag'] == 'Tributário':
             pj = f'<aside class="pjrbox"><div><b>Conteúdo tributário</b><p>A atuação tributária do grupo agora é conduzida pelo PJR Consultoria Tributária.</p><a class="btn solid" href="../tributario.html">Conhecer o PJR</a></div>{SELO_N % "../"}</aside>'
         nav = ''
         if i > 0:
-            nav += f'<a href="{lst[i-1]["slug"]}.html">← {esc(lst[i-1]["title"][:70])}</a>'
+            nav += f'<a href="{lst[i-1]["slug"]}.html">← {esc(cut(lst[i-1]["title"], 70))}</a>'
         if i < len(lst) - 1:
-            nav += f'<a class="r" href="{lst[i+1]["slug"]}.html">{esc(lst[i+1]["title"][:70])} →</a>'
-        page = crumbs('../', [f'<a href="../{"artigos" if k == "artigos" else "eventos"}.html">{"Artigos" if k == "artigos" else "Eventos"}</a>']) + f'<article class="wrap art"><span class="badge{" pjr" if x["tag"] == "Tributário" else ""}">{label if k == "eventos" else x["tag"]}</span><h1>{esc(x["title"])}</h1><div class="prose">{body}</div>{pj}<div class="pn">{nav}</div></article>'
-        layout(f'{k}/{x["slug"]}.html', f'{x["title"]} · Paulo Teodoro Advogados Associados', x['ex'][:155], page, 1, 'conteudos')
+            nav += f'<a class="r" href="{lst[i+1]["slug"]}.html">{esc(cut(lst[i+1]["title"], 70))} →</a>'
+        pub = (x.get('fecha') or '2024-05-01T00:00:00')[:19]
+        mod = (x.get('modif') or pub)[:19]
+        aut_slug = AUT.get(x['slug'])
+        aut_nome = dict(LAW).get(aut_slug) if aut_slug else None
+        words = len(strip(''.join(b_['h'] for b_ in blocks if b_['t'] == 'html')).split())
+        mins = max(1, round(words / 200))
+        por = f'Por <a href="../advogados/{aut_slug}.html">{esc(aut_nome)}</a>' if aut_nome else 'Por <a href="../escritorio.html">Paulo Teodoro Advogados Associados</a>'
+        atual = f' · atualizado em <time datetime="{mod[:10]}">{seo.data_pt(mod)}</time>' if mod[:10] != pub[:10] else ''
+        byline = f'<p class="byline">{por} · <time datetime="{pub[:10]}">{seo.data_pt(pub)}</time>{atual} · {mins} min de leitura</p>'
+        box = ''
+        aslug = {'Trabalhista': 'trabalhista', 'Sindical': 'sindical', 'Cível e contratos': 'civil'}.get(x['tag']) if k == 'artigos' else None
+        if aslug:
+            names, on = [], False
+            for b_ in C[aslug]['blocks']:
+                if b_['t'] == 'h':
+                    on = b_['h'].strip() == 'Advogados Responsáveis'
+                elif b_['t'] == 'list' and on and b_['items'] != ['Enviar e-mail']:
+                    names += b_['items']
+            rl = ''.join(f'<a href="../advogados/{LAW_BY_NAME[nm]}.html"><img src="../{lawyer_photo(LAW_BY_NAME[nm])}" alt="">{esc(nm)}</a>' for nm in names if nm in LAW_BY_NAME)
+            anome = dict(AREAS)[aslug]
+            if rl:
+                box = f'<aside class="areabox"><h3>Advogados da área {anome}</h3><div class="rlaw">{rl}</div><p><a class="more" href="../areas/{aslug}.html">Conheça a área {anome} →</a></p></aside>'
+        rel = sorted([y for y in lst if y is not x and y['tag'] == x['tag']], key=lambda y: abs(y['pos'] - x['pos']))[:3]
+        relhtml = ('<div class="wrap related"><h2>Leia também</h2><div class="posts">' + ''.join(card(y, '../') for y in rel) + '</div></div>') if rel else ''
+        sec = x['tag'] if k == 'artigos' else 'Eventos'
+        page = crumbs('../', [f'<a href="../{"artigos" if k == "artigos" else "eventos"}.html">{"Artigos" if k == "artigos" else "Eventos"}</a>']) + f'<article class="wrap art"><span class="badge{" pjr" if x["tag"] == "Tributário" else ""}">{label if k == "eventos" else x["tag"]}</span><h1>{esc(x["title"])}</h1>{byline}<div class="prose">{body}</div>{pj}{box}<div class="pn">{nav}</div></article>{relhtml}'
+        meta = dict(tipo='article', publicado=pub, modificado=mod, secao=sec, headline=x['title'], autor_nome=aut_nome, autor_url=(f'advogados/{aut_slug}.html' if aut_nome else None),
+                    crumbs=[('Artigos' if k == 'artigos' else 'Eventos', f'{k}.html'), (x['title'], f'{k}/{x["slug"]}.html')], titulo_extra=f'{seo.MESES[int(pub[5:7]) - 1][:3]} {pub[:4]}')
+        layout(f'{k}/{x["slug"]}.html', x['title'], x['ex'], page, 1, 'conteudos', meta=meta)
 
 # eventos (lista)
 ev = banner('', 'Conteúdos', 'Eventos', 'img/2024_04_hero-noticias.webp', 'Palestras, treinamentos, negociações coletivas e participação em entidades.') + '<section><div class="wrap"><div class="posts">' + ''.join(card(x, '') for x in EV) + '</div></div></section>'
@@ -498,3 +531,6 @@ tb = f'''<section class="pjrband"><div class="wrap"><div class="pjrgrid"><div><p
 <section class="band"><div class="wrap in"><div><p class="eyebrow">Um grupo, todas as frentes</p><h2>Você continua com quem já conhece o seu negócio.</h2><p>Se a sua demanda envolve também trabalhista, sindical, cível ou societário, o Paulo Teodoro segue com você. Os dois escritórios trabalham de forma integrada.</p><a class="btn solid" href="{WA}">Falar com o escritório</a></div><div>{ibadge("users", "lg dark")}</div></div></section>'''
 layout('tributario.html', 'Tributário · Paulo Teodoro Advogados Associados', 'A atuação tributária do grupo Paulo Teodoro agora é conduzida pelo PJR Consultoria Tributária.', tb, 0, '')
 print('páginas:', sum(len(f) for _, _, f in os.walk('.') if False) or '', 'artigos', len(ART), 'eventos', len(EV))
+
+n_urls = seo.write_sitemap_robots()
+print('sitemap:', n_urls, 'URLs | indexação:', 'ABERTA' if seo.INDEXAR else 'bloqueada (noindex)')

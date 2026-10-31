@@ -81,3 +81,18 @@ Elementos globais: lockup novo no cabeçalho, botão "Tributário · PJR" destac
 - **Áreas de serviço:** cartões com ícone grande, subáreas com ícone e marca-d'água; páginas de área em painéis numerados, com visão geral clicável, lista com marcadores, advogados com foto e setores atendidos. A página de áreas ganhou o infográfico "Três frentes em cada área" (preventivo, consultivo, contencioso).
 - **Estrutura de apoio:** infográfico em linha com cinco ícones (plataforma web, relatórios, atendimento, informativos, cursos).
 - **PJR:** faixa em fundo verde com a foto do site do PJR, o grafismo do PJR, os três serviços com ícone e o selo "uma empresa do grupo" em moldura dourada. Repetida na página Tributário e nos avisos dos artigos tributários.
+
+## 9. SEO aplicado (2026-10-31)
+
+Gerado por `seo.py` + `build_site.py` em todas as 164 páginas:
+
+- **Títulos:** todos com 60 caracteres ou menos e únicos (sufixo curto "· Paulo Teodoro"); título da página inicial com palavras-chave.
+- **Descrições:** todas entre 100 e 160 caracteres, únicas; as páginas-chave têm texto escrito com chamada para ação.
+- **Canonical, Open Graph e Twitter Card** em todas as páginas, com imagem de 1200×630 (padrão, áreas, escritório e uma por setor).
+- **Dados estruturados (JSON-LD, todos válidos):** `LegalService` e `WebSite` na página inicial; `BreadcrumbList` em todas as demais; `Article` nos 131 artigos e eventos; `Person` nos 9 advogados.
+- **Sitemap:** `sitemap.xml` com 164 URLs.
+- **Artigos:** autor, data de publicação real (obtida da interface pública do WordPress do site atual), data de atualização quando diferente, tempo de leitura, caixa "Advogados da área" e "Leia também" (3 artigos do mesmo tema).
+
+**Autoria:** no WordPress atual todos os posts constam como "admin", então a assinatura é do escritório. Para indicar o autor de cada artigo, preencha `dados/autores.json` (`{"slug-do-artigo": "slug-do-advogado"}`, por exemplo `"jeferson-costa"`) e rode `python3 build_site.py`: a assinatura e o dado estruturado passam a citar o advogado.
+
+**No lançamento** (em `seo.py`): trocar `BASE` pelo endereço definitivo e `INDEXAR = True`. Isso libera os buscadores e coloca o sitemap no `robots.txt`. Antes, definir o mapa de redirecionamentos 301 das URLs do site atual.

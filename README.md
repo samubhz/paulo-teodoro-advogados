@@ -7,4 +7,5 @@ Protótipo estático (HTML/CSS) do novo site do escritório, com o conteúdo do 
 - **Regenerar as páginas:** `python3 build_site.py` (usa `dados/`, `img/` e `icons.py`).
 - **Estrutura e decisões:** veja `ESTRUTURA_SITE_PT.md`.
 - **Imagens de setores e ambientes:** ilustrativas, geradas por IA.
-- Para publicar de verdade: remova `noindex` (em `build_site.py`, função `layout`) e o `robots.txt`.
+- **SEO:** títulos, descrições, canonical, Open Graph, JSON-LD e sitemap são gerados por `seo.py`. Para publicar de verdade: em `seo.py`, troque `BASE` pelo domínio definitivo e `INDEXAR = True`, e rode `python3 build_site.py`.
+- **Autores dos artigos:** `dados/autores.json`.

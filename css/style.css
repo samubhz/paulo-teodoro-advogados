@@ -119,3 +119,8 @@ footer h4{color:#fff;font:700 .74rem var(--sans);letter-spacing:.18em;text-trans
 .selo{width:100%;display:block}
 @media(max-width:900px){.pjrgrid,.band .in,.contact,footer .grid,.lawpage,.pjrbox{grid-template-columns:1fr}header.site .wrap{flex-direction:column;align-items:flex-start;gap:10px}nav ul{gap:14px}.btn.ghost,.btn.line{margin:12px 0 0}.pn a{max-width:100%}section{padding:60px 0}.facts2{grid-template-columns:1fr 1fr}.facts2 div:nth-child(3){border-left:0}.hero2{padding-top:80px}.flow,.sup{grid-template-columns:1fr;gap:28px}.flow:before,.sup:before{display:none}.pfeat{grid-template-columns:1fr}.pjrband:before{inset:0;opacity:.25}.panels{grid-template-columns:1fr}.lawyers.trio{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.facts2{grid-template-columns:1fr}.facts2 div{border-left:0;border-top:1px solid rgba(255,255,255,.12)}}
+
+/* autoria, caixa da área e relacionados */
+.byline{margin:-8px 0 26px;color:var(--ink-soft);font-size:.9rem}.byline a{color:var(--gold-ink);text-underline-offset:3px}
+.areabox{margin:44px 0 10px;max-width:780px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);padding:24px 28px;border-radius:2px}.areabox h3{font-size:1.4rem;margin:0 0 14px}.areabox p{margin:16px 0 0}
+.related{padding-bottom:70px}.related h2{margin-bottom:22px}
